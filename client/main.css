@@ -1,0 +1,14 @@
+body {
+  padding: 10px;
+  font-family: sans-serif;
+}
+.thumbnail{
+	max-width: 500px;
+	max-height: 300px;
+}
+body{
+	padding-top: 60px;
+}
+#headerText{
+	text-align: center;
+}
