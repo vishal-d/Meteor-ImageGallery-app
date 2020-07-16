@@ -1,123 +1,117 @@
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
+import { Session } from 'meteor/session';
 import './main.html';
-Router.configure({
-	layoutTemplate: 'applicationLayout'
-});
 
-Router.route('/', function () {
-  this.render('welcome',{
-  	to:"main"
-  });
-});
-
-Router.route('/images', function () {
-  this.render('navbar',{
-  	to:"navbar"
-  });
-  this.render('greet',{
-  	to:"note"
-  });
-  this.render('insert_img',{
-  	to:"insert"
-  });
-  this.render('hello',{
-  	to:"main"
-  });
-});
-Images=new Mongo.Collection("images");
+Images=new Mongo.Collection("Images");
+//var post_data={data:"Hello"};
 Accounts.ui.config({
 	passwordSignupFields: "USERNAME_AND_EMAIL"
-})
+});
+Session.set("imageLimit", 8);
+lastScrollTop=0;
+$(window).scroll(function(event){
+ //test if we are near to the bottom of the window
+ if($(window).scrollTop()+$(window).height()>$(document).height()-100){
+ 	//test if we are going down
+ 	var scrollTop = $(this).scrollTop();
+ 	if(scrollTop>lastScrollTop){
+ 		Session.set("imageLimit", Session.get("imageLimit")+4);
+ 	}
+ 	lastScrollTop=scrollTop;
+ }
+});
 Template.hello.helpers({
-		img:function(){
-			if(Session.get("userFilter")){
-			 return Images.find({createdBy:Session.get("userFilter")}, {sort:{createdOn:-1,rating:-1}});
-			}
-			else {
-			 return Images.find({}, {sort:{createdOn:-1,rating:-1}});	
-			}
-		
-		},
-		filtering_images:function(){
-			if(Session.get("userFilter")){
-				return true;
-			}
-			else{
-				return false;
-			}
-		},
-		getFilterUser:function(){
-			if(Session.get("userFilter")){
-				var user = Meteor.users.findOne({_id:Session.get("userFilter")});
-				return user.username;
-			}
-			else{
-				return false;
-			}							
-		},
-		getUser:function(user_id){
-			var user = Meteor.users.findOne({_id: user_id});
-			if(user){
-				return user.username;
-			}
-			else {
-				return "Anonymous";
-			}
-		}
-					});
-
-
-Template.greet.helpers({username:function(){
-	if(Meteor.user()){
-		return Meteor.user().username;
-		//return Meteor.user().emails[0].address;
-	}
-	else {
-		return "anonymous internet user";
-	}
-}});
-
+	                   //name:Images.find({},{sort:{createdOn:-1}})
+	                   name:function(){
+	                   	if(Session.get("userFilter")){
+	                   		return Images.find({createdBy:Session.get("userFilter")});
+	                   	}
+	                   	else{
+	                   		return Images.find({},{limit:Session.get("imageLimit")});	
+	                   	}
+	                   	
+	                   },
+	                   getUser:function(user_id){
+	                   	var user = Meteor.users.findOne({"_id":user_id});
+	                    if(user){
+	                    	return user.username;
+	                    }
+	                    else{
+	                    	return "Anonymous";
+	                    }
+	                   },
+	                   filtering_images:function(){
+	                   	if(Session.get("userFilter")){
+	                   		return true;
+	                   	}
+	                   	else{
+	                   		return false;
+	                   	}
+	                   },
+	                   getFilterUser:function(){
+	                   	if(Session.get("userFilter")){
+	                   		var user = Meteor.users.findOne({"_id":Session.get("userFilter")});
+	                   		return user.username;
+	                   	}
+	                   	else{
+	                   		return false;
+	                   	}
+	                   },
+	                  });
 Template.hello.events({
-	'click .js-del-img':function(event){
+	'click .js-del-image':function(event){
 		var image_id = this._id;
 		console.log(image_id);
-		
-		$("#"+image_id).hide('slow', function(){
-			Images.remove({"_id":image_id});//this is a mongofilter
+		$("#"+image_id).hide('slow',function(){
+			Images.remove({"_id":image_id});
 		});
 	},
-
-	'click .js-stars-img':function(event){
-		
-		var user_rating = $(event.currentTarget).data("userrating");
-		console.log(user_rating);
-		var image_id = this.id;
-		console.log(image_id);
-		Images.update({_id:image_id},
-						{$set: {rating:user_rating}});
-	},
-
-	'click .js-set-image-filter':function(event){
-		Session.set('userFilter', this.createdBy);
-	},
-	'click .js-unset-image-filter':function(event){
-		Session.set('userFilter', undefined);
-	}
-})
-
-
-Template.insert_img.events({
-	'submit .js-user-insert':function(event){
-		var src = event.target.imgsrc.value;
-		if(Meteor.user()){
-		Images.insert({
-			img_src: src,
-			createdOn: new Date(),
-			createdBy: Meteor.user()._id
-		});			
-		}
-
+	'submit .js-post-content':function(event){
+		var data_content = event.target.val.value;
+		console.log(data_content);
+		Images.update({"_id":this._id},{$set:{data:data_content}});
 		return false;
+		//Data.insert({data:value});
+	},
+	'click .js-show-form':function(event){
+		$("#image_form_modal").modal('show')
+	},
+	'click .js-set-filter':function(event){
+		Session.set("userFilter", this.createdBy);
+	},
+	'click .js-unset-filter':function(event){
+		Session.set("userFilter", undefined);
 	}
-})
+});
+
+Template.insert.events({
+'submit .js-insert':function(event){
+	var img_src = event.target.add_img_src.value;
+	var img_content = event.target.add_img_content.value;
+	if(Meteor.user()){
+		Images.insert({img_src:img_src,
+		 			data:img_content,
+		  			createdOn:new Date(),
+		  			createdBy:Meteor.user()._id});	
+	}
+	else{
+	  Images.insert({img_src:img_src, data:img_content, createdOn:new Date()});	  	
+	}
+	
+    return false;
+},
+});
+
+Template.body.helpers({username:function(){
+
+	if(Meteor.user()){
+
+		return Meteor.user().username;
+	}
+	else{
+		return "Anonymous person";
+	}
+}
+});
+
