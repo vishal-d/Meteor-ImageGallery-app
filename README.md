@@ -14,5 +14,7 @@ New Features:
 * User can post captions
 * Added infinite scroll feature
 * Improved security
+* Temporarily removed Iron:Routing
+* Added remove filters by User feature
 
 
