@@ -7,3 +7,12 @@ The app has following featuers:
 * Adding, Deleting Images
 * Filtering Images by User
 * Removing the Filter
+
+New Features:
+* Removed Star rating function
+* Added captions on every picture
+* User can post captions
+* Added infinite scroll feature
+* Improved security
+
+
